@@ -1,11 +1,11 @@
 import numpy as np
-import pandas as pd
+from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 
-class Regression:
-    def __init__(self, epochs, eta):
+class LinearRegression:
+    def __init__(self, epochs = 1000, eta = 0.01):
         self.epochs = epochs
         self.eta = eta
         
@@ -30,25 +30,18 @@ class Regression:
             grad_w = -(y - y_pred).dot(X) / X.shape[0]
             grad_b = np.mean(-(y - y_pred))
             
-            self.w = self.w - self.eta * grad_w
-            self.b = self.b - self.eta * grad_b
+            self.w -= self.eta * grad_w
+            self.b -= self.eta * grad_b
             if i % 100 == 0:
                 print(f"Epoch {i} | MSE: {mse:.4f} | w: {self.w} | b: {self.b:.4f}")
 
             
     def predict(self, X):
         return X.dot(self.w) + self.b
-    
-    
-def generate_data():
-    np.random.seed(10)
-    X = np.random.normal(loc = 170, scale = 10, size = 1000).reshape(-1, 1)
-    noise = np.random.normal(loc = 0, scale = 2, size = 1000)
-    y = (X.flatten() - 170) * .5 + noise
-    
-    return X, y
 
-X, y = generate_data()
+
+X, y = make_regression(n_samples = 10000, n_features = 3,
+                       noise = 20, random_state = 30)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle = True, random_state = 30, train_size = .8)
 
@@ -57,10 +50,10 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-model = Regression(epochs = 1000, eta = 0.01)
+model = LinearRegression(epochs = 1000, eta = 0.01)
 model.fit(X_train, y_train)
 
-print('Finalized Weights & Biases:\n')
+print('\nFinalized Weights & Biases:')
 print(f'Weight: {model.w}')
 print(f'Bias: {model.b}')
 
