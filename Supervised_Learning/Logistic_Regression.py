@@ -54,25 +54,30 @@ class LogisticRegression:
         return (proba >= self.threshold).astype(int)
     
 
-X, y = make_classification(n_samples = 10000, n_featurejs = 3, n_informative = 2,
-                           n_redundant = 1, n_classes = 2, random_state = 30)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, stratify = y, random_state = 30, train_size = .8)
+def main():
+    X, y = make_classification(n_samples = 10000, n_featurejs = 3, n_informative = 2,
+                            n_redundant = 1, n_classes = 2, random_state = 30)
 
-scaler = StandardScaler()
+    X_train, X_test, y_train, y_test = train_test_split(X, y, stratify = y, random_state = 30, train_size = .8)
 
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
+    scaler = StandardScaler()
 
-model = LogisticRegression(epochs = 1000, eta = 0.01)
-model.fit(X_train, y_train)
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
 
-print('\nFinalized Weights & Biases:')
-print(f'Weight: {model.w}')
-print(f'Bias: {model.b}')
+    model = LogisticRegression(epochs = 1000, eta = 0.01)
+    model.fit(X_train, y_train)
 
-y_pred = model.predict(X_test)
+    print('\nFinalized Weights & Biases:')
+    print(f'Weight: {model.w}')
+    print(f'Bias: {model.b}')
 
-print('\nAccuracy Scores:')
-print(f' Classification Report:\n{classification_report(y_test, y_pred)}\n')
-print(f'Confusion Matrix: \n{confusion_matrix(y_test, y_pred)}')
+    y_pred = model.predict(X_test)
+
+    print('\nEvaluation:')
+    print(f' Classification Report:\n{classification_report(y_test, y_pred)}\n')
+    print(f'Confusion Matrix: \n{confusion_matrix(y_test, y_pred)}')
+    
+if __name__ == "__main__":
+    main()

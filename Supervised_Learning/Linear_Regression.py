@@ -40,26 +40,30 @@ class LinearRegression:
         return X.dot(self.w) + self.b
 
 
-X, y = make_regression(n_samples = 10000, n_features = 3,
-                       noise = 20, random_state = 30)
+def main():
+    X, y = make_regression(n_samples = 10000, n_features = 3,
+                        noise = 20, random_state = 30)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle = True, random_state = 30, train_size = .8)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle = True, random_state = 30, train_size = .8)
 
-scaler = StandardScaler()
+    scaler = StandardScaler()
 
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
 
-model = LinearRegression(epochs = 1000, eta = 0.01)
-model.fit(X_train, y_train)
+    model = LinearRegression(epochs = 1000, eta = 0.01)
+    model.fit(X_train, y_train)
 
-print('\nFinalized Weights & Biases:')
-print(f'Weight: {model.w}')
-print(f'Bias: {model.b}')
+    print('\nFinalized Weights & Biases:')
+    print(f'Weight: {model.w}')
+    print(f'Bias: {model.b}')
 
-y_pred = model.predict(X_test)
+    y_pred = model.predict(X_test)
 
-print('\nAccuracy Scores:')
-print(f' R2 Score: {r2_score(y_test, y_pred):.4f}')
-print(f'MSE Score: {mean_squared_error(y_test, y_pred):.4f}')
-print(f'MAE Score: {mean_absolute_error(y_test, y_pred):.4f}')
+    print('\nEvaluation:')
+    print(f' R2 Score: {r2_score(y_test, y_pred):.4f}')
+    print(f'MSE Score: {mean_squared_error(y_test, y_pred):.4f}')
+    print(f'MAE Score: {mean_absolute_error(y_test, y_pred):.4f}')
+
+if __name__ == "__main__":
+    main()
