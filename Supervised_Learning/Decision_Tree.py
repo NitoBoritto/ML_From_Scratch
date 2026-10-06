@@ -108,7 +108,7 @@ class DecisionTreeClassifier:
 
     def _split(self, X_col, split_thresh):
         'Splitting data into left and right branches'
-        left_i = np.argwhere(X_col < split_thresh).flatten()
+        left_i = np.argwhere(X_col <= split_thresh).flatten()
         right_i = np.argwhere(X_col > split_thresh).flatten()
         
         return left_i, right_i
@@ -184,10 +184,9 @@ class DecisionTreeRegressor:
     def _grow_tree(self, X, y, depth=0):
             'Growing the decision tree recursively'
             n_samples, n_feats = X.shape
-            n_labels = len(np.unique(y))
             
             # Check Stopping Criteria
-            if depth >= self.max_depth or n_labels == 1 or n_samples < self.min_samples_split:
+            if depth >= self.max_depth or self._variance(y) == 0 or n_samples < self.min_samples_split:
                 leaf_value = self._average(y)
                 
                 return DecisionNode(value=leaf_value)
@@ -254,7 +253,7 @@ class DecisionTreeRegressor:
 
     def _split(self, X_col, split_thresh):
         'Splitting data into left and right branches'
-        left_i = np.argwhere(X_col < split_thresh).flatten()
+        left_i = np.argwhere(X_col <= split_thresh).flatten()
         right_i = np.argwhere(X_col > split_thresh).flatten()
         
         return left_i, right_i
