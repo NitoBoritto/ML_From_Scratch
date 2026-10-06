@@ -1,9 +1,10 @@
 import numpy as np
 from collections import Counter
-from sklearn.datasets import make_classification
+from sklearn.datasets import make_classification, make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix, r2_score, mean_squared_error, mean_absolute_error
+
 
 class DecisionNode:
     def __init__(self, feature = None, threshold = None, left = None, right = None, value = None):
@@ -18,7 +19,7 @@ class DecisionNode:
         'Checking if the node is a leaf'
         return self.value is not None
 
-class DecisionTree:
+class DecisionTreeClassifier:
     def __init__(self, min_samples_split = 2, max_depth = 150, n_features = None, criterion = "gini"):
         'Initializing decision tree parameters'
         self.min_samples_split = min_samples_split
@@ -84,8 +85,8 @@ class DecisionTree:
 
     def _information_gain(self, y, X_col, threshold):
         'Calculating information gain for a split'
-        # Parent Entropy
-        parent_entorpy = self._calculate_impurity(y)
+        # Parent Variance
+        parent_impurity = self._calculate_impurity(y)
         
         # Create Children
         left_i, right_i = self._split(X_col, threshold)
@@ -98,10 +99,10 @@ class DecisionTree:
         n_l, n_r = len(left_i), len(right_i)
         e_l, e_r = self._calculate_impurity(y[left_i]), self._calculate_impurity(y[right_i])
         
-        child_entropy = (n_l / n) * e_l + (n_r / n) * e_r
+        child_impurity = (n_l / n) * e_l + (n_r / n) * e_r
         
         # Calculate IG
-        information_gain = parent_entorpy - child_entropy
+        information_gain = parent_impurity - child_impurity
         return information_gain
 
 
@@ -165,7 +166,130 @@ class DecisionTree:
             return self._traverse_tree(x, node.right)
 
 
-def main():
+class DecisionTreeRegressor:
+    def __init__(self, min_samples_split = 2, max_depth = 150, n_features = None):
+        'Initializing decision tree parameters'
+        self.min_samples_split = min_samples_split
+        self.max_depth = max_depth
+        self.n_features = n_features
+        self.root = None
+
+
+    def fit(self, X, y):
+        'Training the decision tree'
+        self.n_features = X.shape[1] if not self.n_features else min(X.shape[1], self.n_features)
+        self.root = self._grow_tree(X, y)
+
+
+    def _grow_tree(self, X, y, depth=0):
+            'Growing the decision tree recursively'
+            n_samples, n_feats = X.shape
+            n_labels = len(np.unique(y))
+            
+            # Check Stopping Criteria
+            if depth >= self.max_depth or n_labels == 1 or n_samples < self.min_samples_split:
+                leaf_value = self._average(y)
+                
+                return DecisionNode(value=leaf_value)
+            
+            feature_i = np.random.choice(n_feats, self.n_features, replace=False)
+            best_feature, best_threshold = self._best_split(X, y, feature_i)
+            
+            if best_feature is None:
+                leaf_value = self._average(y)
+
+                return DecisionNode(value=leaf_value)
+
+            # Create Child Nodes
+            left_i, right_i = self._split(X[:, best_feature], best_threshold)
+            left = self._grow_tree(X[left_i, :], y[left_i], depth + 1)
+            right = self._grow_tree(X[right_i, :], y[right_i], depth + 1)
+            
+            return DecisionNode(best_feature, best_threshold, left, right)
+
+    
+    def _best_split(self, X, y, feature_i):
+        'Finding the best feature and threshold split'
+        best_gain = -1
+        split_i, split_threshold = None, None
+        
+        for feature in feature_i:
+            X_col = X[:, feature]
+            thresholds = np.unique(X_col)
+            
+            for thresh in thresholds:
+                # Calculate Information Gain
+                gain = self._information_gain(y, X_col, thresh)
+
+                if gain > best_gain:
+                    best_gain = gain
+                    split_i = feature
+                    split_threshold = thresh
+
+        return split_i, split_threshold
+
+
+    def _information_gain(self, y, X_col, threshold):
+        'Calculating information gain for a split'
+        # Parent Variance
+        parent_impurity = self._variance(y)
+        
+        # Create Children
+        left_i, right_i = self._split(X_col, threshold)
+        
+        if len(left_i) == 0 or len(right_i) == 0:
+            return -1
+        
+        # Calculate Children Weighted Entropy
+        n = len(y)
+        n_l, n_r = len(left_i), len(right_i)
+        e_l, e_r = self._variance(y[left_i]), self._variance(y[right_i])
+        
+        child_impurity = (n_l / n) * e_l + (n_r / n) * e_r
+        
+        # Calculate IG
+        information_gain = parent_impurity - child_impurity
+        return information_gain
+
+
+    def _split(self, X_col, split_thresh):
+        'Splitting data into left and right branches'
+        left_i = np.argwhere(X_col < split_thresh).flatten()
+        right_i = np.argwhere(X_col > split_thresh).flatten()
+        
+        return left_i, right_i
+
+
+    def _variance(self, y):
+        'Calculating variance impurity'
+        if len(y) == 0:
+            return -1
+        return np.var(y)
+
+
+    def _average(self, y):
+        'Finding the average Value'
+        return np.mean(y)
+
+
+    def predict(self, X):
+        'Predicting mean value'
+        return np.array([self._traverse_tree(x, self.root) for x in X])
+
+
+    def _traverse_tree (self, x, node):
+        'Traversing the tree to make a prediction'
+        if node.is_leaf_node():
+            return node.value
+        
+        elif x[node.feature] <= node.threshold:
+            return self._traverse_tree(x, node.left)
+        
+        else:
+            return self._traverse_tree(x, node.right)
+
+
+def Classify():
     X, y = make_classification(n_samples = 10000, n_features = 3, n_informative = 2,
                             n_redundant = 1, n_classes = 2, random_state = 30)
 
@@ -176,14 +300,45 @@ def main():
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
-    model = DecisionTree(min_samples_split = 2, max_depth = 150, criterion = "entropy")
+    model = DecisionTreeClassifier(min_samples_split = 2, max_depth = 150, criterion = "entropy")
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
 
     print('\nEvaluation:')
     print(f' Classification Report:\n{classification_report(y_test, y_pred)}\n')
-    print(f'Confusion Matrix: \n{confusion_matrix(y_test, y_pred)}')
+    print(f'Confusion Matrix: \n{confusion_matrix(y_test, y_pred)}\n')
+
+
+def Regress():
+    X, y = make_regression(n_samples = 10000, n_features = 3,
+                        noise = 20, random_state = 30)
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle = True, random_state = 30, train_size = .8)
+
+    scaler = StandardScaler()
+
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    model = DecisionTreeRegressor(min_samples_split = 2, max_depth = 150)
+    model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test)
+
+    print('\nEvaluation:')
+    print(f' R2 Score: {r2_score(y_test, y_pred):.4f}')
+    print(f'MSE Score: {mean_squared_error(y_test, y_pred):.4f}')
+    print(f'MAE Score: {mean_absolute_error(y_test, y_pred):.4f}\n')
+
+
+def main():
+    print("\nTesting Classification Using Decision Trees")
+    Classify()
+    
+    print("\nTesting Regression Using Decision Trees")
+    Regress()
+
     
 if __name__ == "__main__":
     main()
